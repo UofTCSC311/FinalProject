@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from utils import *
 
 import numpy as np
@@ -25,6 +27,13 @@ def neg_log_likelihood(data, theta, beta):
     # Implement the function as described in the docstring.             #
     #####################################################################
     log_lklihood = 0.
+    for i in range(len(data["user_id"])):
+        correct = data["is_correct"][i]
+        user_key = data["user_id"][i]
+        question_key = data["question_id"][i]
+        # from the equation derived in a)
+        diff = (theta[user_key] - beta[question_key])
+        log_lklihood += correct * diff - np.log(1 + np.exp(diff))
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -52,7 +61,15 @@ def update_theta_beta(data, lr, theta, beta):
     # TODO:                                                             #
     # Implement the function as described in the docstring.             #
     #####################################################################
-    pass
+    # from the equation, first derive sigmoid of thea -beta
+    theta_array = np.array(theta[data["user_id"]])
+    beta_array = np.array(beta[data["question_id"]])
+    likli = sigmoid(theta_array - beta_array)
+    derivative_theta = data["is_correct"] - likli
+    derivative_beta = -derivative_theta
+    # likeli is a large array needs grouping use bincount
+    theta += lr * np.bincount(data["user_id"], derivative_theta)
+    beta += lr * np.bincount(data["question_id"], derivative_beta)
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -73,20 +90,35 @@ def irt(data, val_data, lr, iterations):
     :return: (theta, beta, val_acc_lst)
     """
     # TODO: Initialize theta and beta.
-    theta = None
-    beta = None
-
+    # first find dimension of data
+    rows = max(data["user_id"]) + 1
+    # rows = 542
+    columns = max(data["question_id"]) + 1
+    # columns = 1774
+    # use random to set
+    np.random.seed(1)
+    theta = np.random.rand(rows)
+    beta = np.random.rand(columns)
+    train_likelihood = []
+    valid_likelihood = []
     val_acc_lst = []
+    train_acc_lst = []
 
     for i in range(iterations):
         neg_lld = neg_log_likelihood(data, theta=theta, beta=beta)
+        train_likelihood.append(neg_lld)
+        valid_lld = neg_log_likelihood(val_data, theta, beta)
+        valid_likelihood.append(valid_lld)
+        score_train = evaluate(data, theta, beta)
+        train_acc_lst.append(score_train)
         score = evaluate(data=val_data, theta=theta, beta=beta)
         val_acc_lst.append(score)
-        print("NLLK: {} \t Score: {}".format(neg_lld, score))
+        print("On training data set, NLLK: {} \t Score: {}".format(neg_lld,
+                                                                   score))
         theta, beta = update_theta_beta(data, lr, theta, beta)
 
     # TODO: You may change the return values to achieve what you want.
-    return theta, beta, val_acc_lst
+    return theta, beta, train_likelihood, valid_likelihood, train_acc_lst, val_acc_lst
 
 
 def evaluate(data, theta, beta):
@@ -120,9 +152,20 @@ def main():
     # Tune learning rate and number of iterations. With the implemented #
     # code, report the validation and test accuracy.                    #
     #####################################################################
-    print(neg_log_likelihood(train_data, [0 for _ in range(len(train_data["is_correct"]))],
-                             [0 for _ in range(len(train_data["is_correct"]))]))
-    pass
+    # set hyperparameter
+    lr, iterations = 0.01, 25
+    lst_iterations = [i for i in range(1, 26)]
+    theta, beta, train_likelihoods, valid_likelihoods, train_acc_lst, \
+        valid_acc_lst = irt(train_data, val_data, lr, iterations)
+    plt.plot(lst_iterations, train_likelihoods, label="training set likelihood")
+    plt.plot(lst_iterations, valid_likelihoods, label="validation set likelihood")
+    plt.legend()
+    plt.show()
+    # part c)
+    print("Final accuracy on the validation data is:" + str(evaluate(val_data,
+                                                                theta,beta)))
+    print("Final accuracy on the training data is:" + str(evaluate(test_data,
+                                                                theta,beta)))
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -131,7 +174,13 @@ def main():
     # TODO:                                                             #
     # Implement part (d)                                                #
     #####################################################################
-    pass
+    question_lst = [500, 1000, 1500]
+    # reshape data structure of theta
+    theta.reshape(-1).sort()
+    for question in question_lst:
+        plt.plot(theta, sigmoid(theta - beta[question]), label="Question" + str(question))
+    plt.legend()
+    plt.show()
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
