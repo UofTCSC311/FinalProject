@@ -80,6 +80,11 @@ def update_u_z(train_data, lr, u, z):
     c = train_data["is_correct"][i]
     n = train_data["user_id"][i]
     q = train_data["question_id"][i]
+
+    grad_u = (c - u[n].T.dot(z[q])) * z[q]
+    grad_z = (c - u[n].T.dot(z[q])) * u[n]
+    u -= lr * grad_u
+    z -= lr * grad_z
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -106,7 +111,9 @@ def als(train_data, k, lr, num_iteration):
     # TODO:                                                             #
     # Implement the function as described in the docstring.             #
     #####################################################################
-    mat = None
+    for _ in range(num_iteration):
+        u, z = update_u_z(train_data, lr, u, z)
+    mat = u.dot(z.T)
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -124,7 +131,18 @@ def main():
     # (SVD) Try out at least 5 different k and select the best k        #
     # using the validation set.                                         #
     #####################################################################
-    pass
+    k_values = [i for i in range(1, 10)]
+    svd_validation = []
+    for k in k_values:
+        svd_matrix = svd_reconstruct(train_matrix, k)
+        svd_validation.append(sparse_matrix_evaluate(val_data, svd_matrix))
+    best_svd_recon_k = np.argmax(svd_validation)
+    best_svd_recon_acc = svd_validation[best_svd_recon_k]
+    svd_recon_test = sparse_matrix_evaluate(test_data, svd_reconstruct(train_matrix, k_values[best_svd_recon_k]))
+
+    print("Best svd reconstruct k: {}".format(k_values[best_svd_recon_k]))
+    print("Best svd reconstruct accuracy: {}".format(best_svd_recon_acc))
+    print("Best svd reconstruct k on test: {}".format(svd_recon_test))
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -134,7 +152,15 @@ def main():
     # (ALS) Try out at least 5 different k and select the best k        #
     # using the validation set.                                         #
     #####################################################################
-    pass
+    lr, num_iterations = 0.01, 50
+    als_validation = []
+    for k in k_values:
+        als_matrix = als(train_data, k, lr, num_iterations)
+        als_validation.append(sparse_matrix_evaluate(val_data, als_matrix))
+    best_als_k = np.argmax(als_validation)
+    best_als_acc = als_validation[best_als_k]
+    print("Best als k: {}".format(k_values[best_als_k]))
+    print("Best als accuracy: {}".format(best_als_acc))
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
