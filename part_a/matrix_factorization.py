@@ -81,10 +81,10 @@ def update_u_z(train_data, lr, u, z):
     n = train_data["user_id"][i]
     q = train_data["question_id"][i]
 
-    grad_u = (np.sum(u[n] * z[q]) - c) * z[q]
-    grad_z = (np.sum(u[n] * z[q]) - c) * u[n]
-    u -= lr * grad_u
-    z -= lr * grad_z
+    grad = (c - np.sum(u[n] * z[q]))
+    u_temp = u.copy()
+    u += lr * grad * z[q]
+    z += lr * grad * u_temp[n]
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -152,8 +152,8 @@ def main():
     # (ALS) Try out at least 5 different k and select the best k        #
     # using the validation set.                                         #
     #####################################################################
-    new_k_values = [i for i in range(1, 25)]
-    lr, num_iterations = 0.1, 100
+    new_k_values = [i for i in range(1, 40)]
+    lr, num_iterations = 0.1, 1000
     als_validation = []
     for k in new_k_values:
         als_matrix = als(train_data, k, lr, num_iterations)
