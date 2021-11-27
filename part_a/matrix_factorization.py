@@ -81,8 +81,8 @@ def update_u_z(train_data, lr, u, z):
     n = train_data["user_id"][i]
     q = train_data["question_id"][i]
 
-    grad_u = (c - u[n].T.dot(z[q])) * z[q]
-    grad_z = (c - u[n].T.dot(z[q])) * u[n]
+    grad_u = (np.sum(u[n] * z[q]) - c) * z[q]
+    grad_z = (np.sum(u[n] * z[q]) - c) * u[n]
     u -= lr * grad_u
     z -= lr * grad_z
     #####################################################################
@@ -113,7 +113,7 @@ def als(train_data, k, lr, num_iteration):
     #####################################################################
     for _ in range(num_iteration):
         u, z = update_u_z(train_data, lr, u, z)
-    mat = u.dot(z.T)
+    mat = u @ z.T
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -152,14 +152,15 @@ def main():
     # (ALS) Try out at least 5 different k and select the best k        #
     # using the validation set.                                         #
     #####################################################################
-    lr, num_iterations = 0.01, 50
+    new_k_values = [i for i in range(1, 25)]
+    lr, num_iterations = 0.1, 100
     als_validation = []
-    for k in k_values:
+    for k in new_k_values:
         als_matrix = als(train_data, k, lr, num_iterations)
         als_validation.append(sparse_matrix_evaluate(val_data, als_matrix))
     best_als_k = np.argmax(als_validation)
     best_als_acc = als_validation[best_als_k]
-    print("Best als k: {}".format(k_values[best_als_k]))
+    print("Best als k: {}".format(new_k_values[best_als_k]))
     print("Best als accuracy: {}".format(best_als_acc))
     #####################################################################
     #                       END OF YOUR CODE                            #
