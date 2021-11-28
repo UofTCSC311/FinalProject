@@ -1,5 +1,7 @@
 from utils import *
 from scipy.linalg import sqrtm
+import matplotlib.pyplot as plt
+
 
 import numpy as np
 
@@ -81,7 +83,7 @@ def update_u_z(train_data, lr, u, z):
     n = train_data["user_id"][i]
     q = train_data["question_id"][i]
 
-    grad = (c - np.sum(u[n] * z[q]))
+    grad = c - np.sum(u[n] * z[q])
     u_temp = u.copy()
     u += lr * grad * z[q]
     z += lr * grad * u_temp[n]
@@ -91,7 +93,7 @@ def update_u_z(train_data, lr, u, z):
     return u, z
 
 
-def als(train_data, k, lr, num_iteration):
+def als(train_data, k, lr, num_iteration, plot=False, val_data=None):
     """ Performs ALS algorithm. Return reconstructed matrix.
 
     :param train_data: A dictionary {user_id: list, question_id: list,
@@ -99,6 +101,9 @@ def als(train_data, k, lr, num_iteration):
     :param k: int
     :param lr: float
     :param num_iteration: int
+    :param plot: bool
+    :param val_data: A dictionary {user_id: list, question_id: list,
+    is_correct: list} only used for computing square loss
     :return: 2D reconstructed Matrix.
     """
     # Initialize u and z
@@ -111,8 +116,22 @@ def als(train_data, k, lr, num_iteration):
     # TODO:                                                             #
     # Implement the function as described in the docstring.             #
     #####################################################################
+    train_plot_lst = []
+    val_plot_lst = []
     for _ in range(num_iteration):
         u, z = update_u_z(train_data, lr, u, z)
+        if plot:  # compute square losses
+            train_plot_lst.append(squared_error_loss(train_data, u, z))
+            val_plot_lst.append(squared_error_loss(val_data, u, z))
+    if plot:  # plot square losses
+        plt.title("Squared error losses as a function of iteration")
+        plt.xlabel("Iterations")
+        plt.ylabel("Square error loss")
+        iterations = [i for i in range(num_iteration)]
+        plt.plot(iterations, train_plot_lst, label="Training error")
+        plt.plot(iterations, val_plot_lst, label="Validation error")
+        plt.legend()
+        plt.show()
     mat = u @ z.T
     #####################################################################
     #                       END OF YOUR CODE                            #
@@ -136,9 +155,11 @@ def main():
     for k in k_values:
         svd_matrix = svd_reconstruct(train_matrix, k)
         svd_validation.append(sparse_matrix_evaluate(val_data, svd_matrix))
+
     best_svd_recon_k = np.argmax(svd_validation)
     best_svd_recon_acc = svd_validation[best_svd_recon_k]
-    svd_recon_test = sparse_matrix_evaluate(test_data, svd_reconstruct(train_matrix, k_values[best_svd_recon_k]))
+    svd_recon_test = sparse_matrix_evaluate(
+        test_data, svd_reconstruct(train_matrix, k_values[best_svd_recon_k]))
 
     print("Best svd reconstruct k: {}".format(k_values[best_svd_recon_k]))
     print("Best svd reconstruct accuracy: {}".format(best_svd_recon_acc))
@@ -152,16 +173,24 @@ def main():
     # (ALS) Try out at least 5 different k and select the best k        #
     # using the validation set.                                         #
     #####################################################################
-    new_k_values = [i for i in range(1, 40)]
-    lr, num_iterations = 0.1, 1000
+    new_k_values = [i for i in range(1, 50)]
+    lr, num_iterations = 0.01, 1000
     als_validation = []
     for k in new_k_values:
         als_matrix = als(train_data, k, lr, num_iterations)
         als_validation.append(sparse_matrix_evaluate(val_data, als_matrix))
+
     best_als_k = np.argmax(als_validation)
     best_als_acc = als_validation[best_als_k]
+    test_acc = sparse_matrix_evaluate(test_data, als(train_data, best_als_k, lr, num_iterations))
+
+    print("Learning rate: {}".format(lr))
+    print("Iterations: {}".format(num_iterations))
     print("Best als k: {}".format(new_k_values[best_als_k]))
     print("Best als accuracy: {}".format(best_als_acc))
+    print("Test accuracy: {}".format(test_acc))
+    # call als function to plot train and validation square errors
+    als(train_data, best_als_k, lr, num_iterations, plot=True, val_data=val_data)
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -169,3 +198,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
