@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from utils import *
 from torch.autograd import Variable
 
@@ -70,7 +72,8 @@ class AutoEncoder(nn.Module):
         # Implement the function as described in the docstring.             #
         # Use sigmoid activations for f and g.                              #
         #####################################################################
-        out = inputs
+        encoded = torch.sigmoid(self.g(inputs))
+        out = torch.sigmoid(self.h(encoded))
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
@@ -90,15 +93,17 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
     :param num_epoch: int
     :return: None
     """
-    # TODO: Add a regularizer to the cost function. 
-    
+    # TODO: Add a regularizer to the cost function.
+
     # Tell PyTorch you are training the model.
     model.train()
 
     # Define optimizers and loss function.
     optimizer = optim.SGD(model.parameters(), lr=lr)
     num_student = train_data.shape[0]
-
+    valid_acc_lst = []
+    train_loss_lst = []
+    epoch_lst = []
     for epoch in range(0, num_epoch):
         train_loss = 0.
 
@@ -112,16 +117,20 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
             # Mask the target to only compute the gradient of valid entries.
             nan_mask = np.isnan(train_data[user_id].unsqueeze(0).numpy())
             target[0][nan_mask] = output[0][nan_mask]
-
-            loss = torch.sum((output - target) ** 2.)
+            # add regularizer into loss function
+            loss = torch.sum((output - target) ** 2.) + lamb * 0.5 * model.get_weight_norm()
             loss.backward()
 
             train_loss += loss.item()
             optimizer.step()
 
         valid_acc = evaluate(model, zero_train_data, valid_data)
+        valid_acc_lst.append(valid_acc)
+        epoch_lst.append(epoch)
+        train_loss_lst.append(train_loss)
         print("Epoch: {} \tTraining Cost: {:.6f}\t "
               "Valid Acc: {}".format(epoch, train_loss, valid_acc))
+    return valid_acc_lst, train_loss_lst, epoch_lst
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -161,17 +170,84 @@ def main():
     # Try out 5 different k and select the best k using the             #
     # validation set.                                                   #
     #####################################################################
+    # part c)
     # Set model hyperparameters.
-    k = None
-    model = None
-
+    k_lst = [10, 50, 100, 200, 500]
     # Set optimization hyperparameters.
-    lr = None
-    num_epoch = None
-    lamb = None
+    lr_lst = [0.1, 0.5, 1]
+    num_epoch_lst = [10, 20, 50]
+    lamb = 0.1
+    # plot and find model with the best accuracy
+    # part1, summary = plt.subplots(len(num_epoch_lst), len(lr_lst))
+    # for id_epoch in range(len(num_epoch_lst)):
+    #     epoch = num_epoch_lst[id_epoch]
+    #     for id_lr in range(len(lr_lst)):
+    #         lr = lr_lst[id_lr]
+    #         for k in k_lst:
+    #             cols = train_matrix.shape[1]
+    #             model = AutoEncoder(cols, k)
+    #             acc_valid, training_loss, epoch_lst = train(model, lr, lamb, train_matrix, zero_train_matrix,valid_data, epoch)
+    #             summary[id_epoch][id_lr].plot(epoch_lst, acc_valid)
+    #             summary[id_epoch][id_lr].set_ylabel("Accuracy")
+    #             summary[id_epoch][id_lr].set_title(f"Epoch value : {epoch}, Lr value: {lr}")
+    #         summary[id_epoch][id_lr].legend(loc="upper left")
+    # at this point, we know  Epoch = 20, lr = 0.1, need to find k*
+    epoch, lr = 20, 0.1
+    # for k in k_lst:
+    #     cols = train_matrix.shape[1]
+    #     model = AutoEncoder(cols, k)
+    #     acc_valid, training_loss, epoch_lst = train(model, lr, lamb,
+    #                                                 train_matrix,
+    #                                                 zero_train_matrix,
+    #                                                 valid_data, epoch)
+    #     plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
+    #     plt.ylabel("Accuracy")
+    #     plt.title(
+    #         f"Epoch value : {epoch}, Lr value: {lr}")
+    # plt.legend(loc="upper left", )
+    # plt.show()
+    # # from plot, the best accuracy is around 0.684, corresponding hyperparameter
+    # # Epoch = 20, lr = 0.1, k* = 10
+    # comment out for part d) plots
+    # k = 10
+    # cols = train_matrix.shape[1]
+    # model = AutoEncoder(cols, k)
+    # acc_valid, training_loss, epoch_lst = train(model, lr, lamb,
+    #                                             train_matrix,
+    #                                             zero_train_matrix,
+    #                                             valid_data, epoch)
+    # plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
+    # plt.ylabel("Accuracy")
+    # plt.title(
+    #     f"Epoch value : {epoch}, Lr value: {lr}")
+    # plt.show()
+    # plt.plot(epoch_lst, training_loss, label=f"k value:{k}")
+    # plt.ylabel("Training loss")
+    # plt.title(
+    #     f"Epoch value : {epoch}, Lr value: {lr}")
+    # plt.show()
+    # part e)
+    lamb_lst = [0.001, 0.01, 0.1, 1]
+    for lamb in lamb_lst:
+        k = 10
+        cols = train_matrix.shape[1]
+        model = AutoEncoder(cols, k)
+        acc_valid, training_loss, epoch_lst = train(model, lr, lamb,
+                                                    train_matrix,
+                                                    zero_train_matrix,
+                                                    valid_data, epoch)
+        plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
+        plt.ylabel("Accuracy")
+        plt.title(
+            f"Epoch value : {epoch}, Lr value: {lr}")
+        plt.show()
+        plt.plot(epoch_lst, training_loss, label=f"k value:{k}")
+        plt.ylabel("Training loss")
+        plt.title(
+            f"Epoch value : {epoch}, Lr value: {lr}")
+        plt.show()
+    # performance of 0.001 is good, best accuracy is 0.69211
 
-    train(model, lr, lamb, train_matrix, zero_train_matrix,
-          valid_data, num_epoch)
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################

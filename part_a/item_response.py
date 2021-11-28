@@ -160,6 +160,8 @@ def main():
     plt.plot(lst_iterations, train_likelihoods, label="training set likelihood")
     plt.plot(lst_iterations, valid_likelihoods, label="validation set likelihood")
     plt.legend()
+    plt.ylabel("Likelihoods")
+    plt.xlabel("Iterations")
     plt.show()
     # part c)
     print("Final accuracy on the validation data is:" + str(evaluate(val_data,
