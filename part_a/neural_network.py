@@ -178,54 +178,55 @@ def main():
     num_epoch_lst = [10, 20, 50]
     lamb = 0.1
     # plot and find model with the best accuracy
-    # part1, summary = plt.subplots(len(num_epoch_lst), len(lr_lst))
-    # for id_epoch in range(len(num_epoch_lst)):
-    #     epoch = num_epoch_lst[id_epoch]
-    #     for id_lr in range(len(lr_lst)):
-    #         lr = lr_lst[id_lr]
-    #         for k in k_lst:
-    #             cols = train_matrix.shape[1]
-    #             model = AutoEncoder(cols, k)
-    #             acc_valid, training_loss, epoch_lst = train(model, lr, lamb, train_matrix, zero_train_matrix,valid_data, epoch)
-    #             summary[id_epoch][id_lr].plot(epoch_lst, acc_valid)
-    #             summary[id_epoch][id_lr].set_ylabel("Accuracy")
-    #             summary[id_epoch][id_lr].set_title(f"Epoch value : {epoch}, Lr value: {lr}")
-    #         summary[id_epoch][id_lr].legend(loc="upper left")
+    part1, summary = plt.subplots(len(num_epoch_lst), len(lr_lst))
+    for id_epoch in range(len(num_epoch_lst)):
+        epoch = num_epoch_lst[id_epoch]
+        for id_lr in range(len(lr_lst)):
+            lr = lr_lst[id_lr]
+            for k in k_lst:
+                cols = train_matrix.shape[1]
+                model = AutoEncoder(cols, k)
+                acc_valid, training_loss, epoch_lst = train(model, lr, lamb, train_matrix, zero_train_matrix,valid_data, epoch)
+                summary[id_epoch][id_lr].plot(epoch_lst, acc_valid)
+                summary[id_epoch][id_lr].set_ylabel("Accuracy")
+                summary[id_epoch][id_lr].set_title(f"Epoch value : {epoch}, Lr value: {lr}")
+            summary[id_epoch][id_lr].legend(loc="upper left")
+    summary.show()
     # at this point, we know  Epoch = 20, lr = 0.1, need to find k*
     epoch, lr = 20, 0.1
-    # for k in k_lst:
-    #     cols = train_matrix.shape[1]
-    #     model = AutoEncoder(cols, k)
-    #     acc_valid, training_loss, epoch_lst = train(model, lr, lamb,
-    #                                                 train_matrix,
-    #                                                 zero_train_matrix,
-    #                                                 valid_data, epoch)
-    #     plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
-    #     plt.ylabel("Accuracy")
-    #     plt.title(
-    #         f"Epoch value : {epoch}, Lr value: {lr}")
-    # plt.legend(loc="upper left", )
-    # plt.show()
-    # # from plot, the best accuracy is around 0.684, corresponding hyperparameter
-    # # Epoch = 20, lr = 0.1, k* = 10
+    for k in k_lst:
+        cols = train_matrix.shape[1]
+        model = AutoEncoder(cols, k)
+        acc_valid, training_loss, epoch_lst = train(model, lr, lamb,
+                                                    train_matrix,
+                                                    zero_train_matrix,
+                                                    valid_data, epoch)
+        plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
+        plt.ylabel("Accuracy")
+        plt.title(
+            f"Epoch value : {epoch}, Lr value: {lr}")
+    plt.legend(loc="upper left", )
+    plt.show()
+    # from plot, the best accuracy is around 0.684, corresponding hyperparameter
+    # Epoch = 20, lr = 0.1, k* = 10
     # comment out for part d) plots
-    # k = 10
-    # cols = train_matrix.shape[1]
-    # model = AutoEncoder(cols, k)
-    # acc_valid, training_loss, epoch_lst = train(model, lr, lamb,
-    #                                             train_matrix,
-    #                                             zero_train_matrix,
-    #                                             valid_data, epoch)
-    # plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
-    # plt.ylabel("Accuracy")
-    # plt.title(
-    #     f"Epoch value : {epoch}, Lr value: {lr}")
-    # plt.show()
-    # plt.plot(epoch_lst, training_loss, label=f"k value:{k}")
-    # plt.ylabel("Training loss")
-    # plt.title(
-    #     f"Epoch value : {epoch}, Lr value: {lr}")
-    # plt.show()
+    k = 10
+    cols = train_matrix.shape[1]
+    model = AutoEncoder(cols, k)
+    acc_valid, training_loss, epoch_lst = train(model, lr, lamb,
+                                                train_matrix,
+                                                zero_train_matrix,
+                                                valid_data, epoch)
+    plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
+    plt.ylabel("Accuracy")
+    plt.title(
+        f"Epoch value : {epoch}, Lr value: {lr}")
+    plt.show()
+    plt.plot(epoch_lst, training_loss, label=f"k value:{k}")
+    plt.ylabel("Training loss")
+    plt.title(
+        f"Epoch value : {epoch}, Lr value: {lr}")
+    plt.show()
     # part e)
     lamb_lst = [0.001, 0.01, 0.1, 1]
     for lamb in lamb_lst:
