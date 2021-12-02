@@ -117,7 +117,6 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
             # Mask the target to only compute the gradient of valid entries.
             nan_mask = np.isnan(train_data[user_id].unsqueeze(0).numpy())
             target[0][nan_mask] = output[0][nan_mask]
-            # add regularizer into loss function
             loss = torch.sum((output - target) ** 2.) + lamb * 0.5 * model.get_weight_norm()
             loss.backward()
 
@@ -170,13 +169,14 @@ def main():
     # Try out 5 different k and select the best k using the             #
     # validation set.                                                   #
     #####################################################################
-    # part c)
-    # Set model hyperparameters.
+    # # part c)
+    # # Set model hyperparameters.
     k_lst = [10, 50, 100, 200, 500]
-    # Set optimization hyperparameters.
+    # # Set optimization hyperparameters.
     lr_lst = [0.1, 0.5, 1]
     num_epoch_lst = [10, 20, 50]
-    lamb = 0.1
+    lamb = 0
+    # we didn't use regularizer for this part
     # plot and find model with the best accuracy
     part1, summary = plt.subplots(len(num_epoch_lst), len(lr_lst))
     for id_epoch in range(len(num_epoch_lst)):
@@ -189,10 +189,10 @@ def main():
                 acc_valid, training_loss, epoch_lst = train(model, lr, lamb, train_matrix, zero_train_matrix,valid_data, epoch)
                 summary[id_epoch][id_lr].plot(epoch_lst, acc_valid)
                 summary[id_epoch][id_lr].set_ylabel("Accuracy")
-                summary[id_epoch][id_lr].set_title(f"Epoch value : {epoch}, Lr value: {lr}")
+                summary[id_epoch][id_lr].set_title(f"Epoch: {epoch}, Lr: {lr}")
             summary[id_epoch][id_lr].legend(loc="upper left")
     summary.show()
-    # at this point, we know  Epoch = 20, lr = 0.1, need to find k*
+    # from the plot, we know  Epoch = 20, lr = 0.1, need to find k*
     epoch, lr = 20, 0.1
     for k in k_lst:
         cols = train_matrix.shape[1]
@@ -203,30 +203,33 @@ def main():
                                                     valid_data, epoch)
         plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
         plt.ylabel("Accuracy")
+        plt.xlabel("Epoch")
         plt.title(
-            f"Epoch value : {epoch}, Lr value: {lr}")
-    plt.legend(loc="upper left", )
-    plt.show()
+            f"Epoch value : {epoch}, Lr value: {lr}, Lambda Value: 0")
+
+    plt.savefig('Q3 c')
     # from plot, the best accuracy is around 0.684, corresponding hyperparameter
     # Epoch = 20, lr = 0.1, k* = 10
-    # comment out for part d) plots
+
+    # # part d)
     k = 10
     cols = train_matrix.shape[1]
     model = AutoEncoder(cols, k)
+    fig, pltd = plt.subplots(ncols=2, figsize=(20, 15))
     acc_valid, training_loss, epoch_lst = train(model, lr, lamb,
                                                 train_matrix,
                                                 zero_train_matrix,
                                                 valid_data, epoch)
-    plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
-    plt.ylabel("Accuracy")
-    plt.title(
-        f"Epoch value : {epoch}, Lr value: {lr}")
-    plt.show()
-    plt.plot(epoch_lst, training_loss, label=f"k value:{k}")
-    plt.ylabel("Training loss")
-    plt.title(
-        f"Epoch value : {epoch}, Lr value: {lr}")
-    plt.show()
+    print(f"Highest validation accuracy:{max(acc_valid)}")
+    pltd[0].plot(epoch_lst, acc_valid, label=f"k value:{k}")
+    pltd[0].set_ylabel("Accuracy")
+    pltd[0].set_xlabel("Epoch")
+
+    pltd[1].plot(epoch_lst, training_loss, label=f"k value:{k}")
+    pltd[1].set_ylabel("Training loss")
+    pltd[1].set_xlabel("Epoch")
+    fig.savefig('Q3 d')
+    print(f"Final test accuracy: {evaluate(model, zero_train_matrix, test_data)}")
     # part e)
     lamb_lst = [0.001, 0.01, 0.1, 1]
     for lamb in lamb_lst:
@@ -237,17 +240,32 @@ def main():
                                                     train_matrix,
                                                     zero_train_matrix,
                                                     valid_data, epoch)
+        print(f"The best accuracy: {max(acc_valid)} for lambda = {lamb}")
         plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
         plt.ylabel("Accuracy")
-        plt.title(
-            f"Epoch value : {epoch}, Lr value: {lr}")
+        plt.xlabel("Epoch")
+        plt.title(f"Epoch value : {epoch}, Lr value: {lr}, Lambda value: {lamb}")
         plt.show()
-        plt.plot(epoch_lst, training_loss, label=f"k value:{k}")
-        plt.ylabel("Training loss")
-        plt.title(
-            f"Epoch value : {epoch}, Lr value: {lr}")
-        plt.show()
-    # performance of 0.001 is good, best accuracy is 0.69211
+        # report final accuracy
+    print(f"Final test accuracy with regularizer: {evaluate(model, zero_train_matrix, test_data)}")
+        # from comparison, lambda = 0.001 is good
+    k = 10
+    model = AutoEncoder(train_matrix.shape[1], k)
+    acc_valid, training_loss, epoch_lst = train(model, lr, lamb,
+                                                train_matrix,
+                                                zero_train_matrix,
+                                                valid_data, epoch)
+    plt.plot(epoch_lst, acc_valid, label=f"k value:{k}")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epoch")
+    plt.title(f"Epoch value : {epoch}, Lr value: {lr}, Lambda value: {lamb}")
+    plt.show()
+    plt.plot(epoch_lst, training_loss, label=f"k value:{k}")
+    plt.xlabel("Epoch")
+    plt.ylabel("Training loss")
+    plt.title(f"Epoch value : {epoch}, Lr value: {lr}")
+
+    plt.show()
 
     #####################################################################
     #                       END OF YOUR CODE                            #
