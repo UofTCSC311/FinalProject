@@ -2,20 +2,6 @@ from utils import *
 import item_response
 
 
-def bootstrap_matrix(matrix, m):
-    """ boostrap samples for a sparse matrix
-    :param matrix: 2D sparse matrix
-    :param m: int
-    :return: 2D sparse matrix
-    """
-    new_matrix_lst = []
-    for _ in range(m):
-        i = np.random.choice(matrix.shape[0], 1)[0]
-        new_matrix_lst.append(matrix[i])
-    new_matrix = np.array(new_matrix_lst)
-    return new_matrix
-
-
 def bootstrap(data, m):
     """ boostrap samples from a dataset
     :param data: A dictionary {user_id: list, question_id: list,
