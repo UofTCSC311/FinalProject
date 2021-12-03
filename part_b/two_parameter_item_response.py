@@ -21,10 +21,6 @@ def neg_log_likelihood(data, theta, alpha, beta):
     :param beta: Vector
     :return: float
     """
-    #####################################################################
-    # TODO:                                                             #
-    # Implement the function as described in the docstring.             #
-    #####################################################################
     log_lklihood = 0.
     for i in range(len(data["user_id"])):
         correct = data["is_correct"][i]
@@ -33,9 +29,6 @@ def neg_log_likelihood(data, theta, alpha, beta):
         # from the equation derived in a)
         factor = alpha[question_key] * (theta[user_key] - beta[question_key])
         log_lklihood += correct * factor - np.log(1 + np.exp(factor))
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
     return -log_lklihood
 
 
@@ -54,11 +47,6 @@ def update_theta_beta(data, lr, theta, alpha, beta):
     :param beta: Vector
     :return: tuple of vectors
     """
-    #####################################################################
-    # TODO:                                                             #
-    # Implement the function as described in the docstring.             #
-    #####################################################################
-    # from the equation, first derive sigmoid of thea -beta
     theta_array = np.array(theta[data["user_id"]])
     beta_array = np.array(beta[data["question_id"]])
     alpha_array = np.array(alpha[data["question_id"]])
@@ -72,9 +60,6 @@ def update_theta_beta(data, lr, theta, alpha, beta):
     theta += lr * np.bincount(data["user_id"], derivative_theta)
     beta += lr * np.bincount(data["question_id"], derivative_beta)
     alpha += lr * np.bincount(data["question_id"], derivative_alpha)
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
     return theta, alpha, beta
 
 
@@ -89,8 +74,6 @@ def irt(data, val_data, lr, iterations):
     :param iterations: int
     :return: (theta, beta, val_acc_lst)
     """
-    # TODO: Initialize theta and beta.
-    # first find dimension of data
     rows = max(data["user_id"]) + 1
     # rows = 542
     columns = max(data["question_id"]) + 1
@@ -118,7 +101,6 @@ def irt(data, val_data, lr, iterations):
                                                                    score))
         theta, alpha, beta = update_theta_beta(data, lr, theta, alpha, beta)
 
-    # TODO: You may change the return values to achieve what you want.
     return theta, alpha, beta, train_likelihood, valid_likelihood, train_acc_lst, val_acc_lst
 
 
@@ -143,16 +125,11 @@ def evaluate(data, theta, alpha, beta):
 
 def main():
     train_data = load_train_csv("../data")
-    # You may optionally use the sparse matrix.
     sparse_matrix = load_train_sparse("../data")
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
 
-    #####################################################################
-    # TODO:                                                             #
-    # Tune learning rate and number of iterations. With the implemented #
-    # code, report the validation and test accuracy.                    #
-    #####################################################################
+
     # set hyperparameter
     lr, iterations = 0.01, 25
     lst_iterations = [i for i in range(1, 26)]
@@ -169,25 +146,6 @@ def main():
                                                                      theta, alpha, beta)))
     print("Final accuracy on the training data is:" + str(evaluate(test_data,
                                                                    theta, alpha, beta)))
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
-
-    #####################################################################
-    # TODO:                                                             #
-    # Implement part (d)                                                #
-    #####################################################################
-    question_lst = [500, 1000, 1500]
-    # reshape data structure of theta
-    theta.reshape(-1).sort()
-    for question in question_lst:
-        plt.plot(theta, sigmoid(alpha[question] * (theta - beta[question])), label="Question" + str(question))
-    plt.legend()
-    plt.show()
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
-
 
 if __name__ == "__main__":
     main()
