@@ -13,9 +13,7 @@ def sigmoid(x):
 
 def neg_log_likelihood(data, theta, beta):
     """ Compute the negative log-likelihood.
-
     You may optionally replace the function arguments to receive a matrix.
-
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
     :param theta: Vector
@@ -42,14 +40,11 @@ def neg_log_likelihood(data, theta, beta):
 
 def update_theta_beta(data, lr, theta, beta):
     """ Update theta and beta using gradient descent.
-
     You are using alternating gradient descent. Your update should look:
     for i in iterations ...
         theta <- new_theta
         beta <- new_beta
-
     You may optionally replace the function arguments to receive a matrix.
-
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
     :param lr: float
@@ -78,9 +73,7 @@ def update_theta_beta(data, lr, theta, beta):
 
 def irt(data, val_data, lr, iterations):
     """ Train IRT model.
-
     You may optionally replace the function arguments to receive a matrix.
-
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
     :param val_data: A dictionary {user_id: list, question_id: list,
@@ -125,7 +118,6 @@ def evaluate(data, theta, beta):
     """ Evaluate the model given data and return the accuracy.
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
-
     :param theta: Vector
     :param beta: Vector
     :return: float
@@ -157,6 +149,7 @@ def main():
     lst_iterations = [i for i in range(1, 26)]
     theta, beta, train_likelihoods, valid_likelihoods, train_acc_lst, \
         valid_acc_lst = irt(train_data, val_data, lr, iterations)
+    plt.title("1-Parameter IRT")
     plt.plot(lst_iterations, train_likelihoods, label="training set likelihood")
     plt.plot(lst_iterations, valid_likelihoods, label="validation set likelihood")
     plt.legend()
@@ -179,8 +172,11 @@ def main():
     question_lst = [500, 1000, 1500]
     # reshape data structure of theta
     theta.reshape(-1).sort()
+    plt.title("Probability curve of questions")
     for question in question_lst:
         plt.plot(theta, sigmoid(theta - beta[question]), label="Question" + str(question))
+    plt.xlabel("Theta")
+    plt.ylabel("Probability")
     plt.legend()
     plt.show()
     #####################################################################
@@ -190,3 +186,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
