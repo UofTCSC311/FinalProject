@@ -30,7 +30,7 @@ def age_classifier(year):
 
 
 def _load_csv(path):
-    elder, younger = age_classifier(2013)
+    elder, younger = age_classifier(2011)
     # A helper function to load the csv file.
     if not os.path.exists(path):
         raise Exception("The specified path {} does not exist.".format(path))
