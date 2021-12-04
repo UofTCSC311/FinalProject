@@ -59,7 +59,7 @@ def neg_log_likelihood(data, theta, beta, gamma):
     return -log_lklihood
 
 
-def get_mean(arr, weight):
+def convertToMean(arr, weight):
     dic = {}
     lst = [1 for i in range(56688)]
     for i in range(len(arr)):
@@ -87,7 +87,7 @@ def update_theta_beta_bound(data, lr, theta, beta, gamma):
     is_correct: list}
     :param lr: float
     :param theta: Vector
-    :param alpha: Vector
+    :param gamma: Vector
     :param beta: Vector
     :return: tuple of vectors
     """
@@ -96,17 +96,14 @@ def update_theta_beta_bound(data, lr, theta, beta, gamma):
     beta_array = np.array(beta[data["question_id"]])
     gamma_i = np.array(gamma[data["user_id"]])
     diff = (theta_array - beta_array)
-    likli = sigmoid(diff)
-    gamma_likeli = sigmoid_new(diff, gamma_i)
     derivative_theta = data["is_correct"] * np.exp(expression_helper_3(diff, gamma_i)) - sigmoid(diff)
     derivative_beta = -derivative_theta
     derivative_gamma = data["is_correct"] * (gamma_inverse(diff, gamma_i) - inverse(gamma_i)) + inverse(gamma_i)
-    gamma_list = derivative_gamma.tolist()
     theta += lr * np.bincount(data["user_id"], derivative_theta)
     beta += lr * np.bincount(data["question_id"], derivative_beta)
-    derivative = np.array(get_mean(data["user_id"], derivative_gamma))
-
-    gamma += lr * np.bincount(data["user_id"], derivative)
+    derivative = np.array(convertToMean(data["user_id"], derivative_gamma))
+    # use mean bottom line
+    gamma += 0.1 * lr * np.bincount(data["user_id"], derivative)
     for i in range(len(gamma)):
         if gamma[i] < 0:
             gamma[i] = 0
@@ -163,7 +160,7 @@ def evaluate(data, theta, beta, gamma):
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
     :param theta: Vector
-    :param alpha: Vector
+    :param gamma: Vector
     :param beta: Vector
     :return: float
     """
@@ -184,8 +181,8 @@ def main():
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
     # set hyperparameter
-    lr, iterations = 0.0003, 25
-    lst_iterations = [i for i in range(1, 26)]
+    lr, iterations = 0.005, 20
+    lst_iterations = [i for i in range(1, 21)]
     theta, beta, gamma, train_likelihoods, valid_likelihoods, train_acc_lst, \
         valid_acc_lst = irt(train_data, val_data, lr, iterations)
     plt.title("1-Parameter IRT")
