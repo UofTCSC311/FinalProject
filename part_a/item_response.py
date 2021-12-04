@@ -149,7 +149,7 @@ def main():
     lst_iterations = [i for i in range(1, 26)]
     theta, beta, train_likelihoods, valid_likelihoods, train_acc_lst, \
         valid_acc_lst = irt(train_data, val_data, lr, iterations)
-    plt.title("1-Parameter IRT")
+    plt.title("IRT")
     plt.plot(lst_iterations, train_likelihoods, label="training set likelihood")
     plt.plot(lst_iterations, valid_likelihoods, label="validation set likelihood")
     plt.legend()
@@ -186,4 +186,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+

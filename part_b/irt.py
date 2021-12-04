@@ -12,6 +12,12 @@ def sigmoid(x):
     """
     return np.exp(x) / (1 + np.exp(x))
 
+def sigmoid_new(x, gamma_i):
+    return np.exp(x) / (gamma_i + np.exp(x))
+
+def inverse(x):
+
+    return np.ones(np.shape(x)[0]) / (x - 1)
 
 def neg_log_likelihood(data, theta, alpha, beta):
     """ Compute the negative log-likelihood.
@@ -34,7 +40,7 @@ def neg_log_likelihood(data, theta, alpha, beta):
     return -log_lklihood
 
 
-def update_theta_beta(data, lr, theta, alpha, beta):
+def update_theta_beta_bound(data, lr, theta, alpha, beta, gamma):
     """ Update theta and beta using gradient descent.
     You are using alternating gradient descent. Your update should look:
     for i in iterations ...
@@ -52,17 +58,23 @@ def update_theta_beta(data, lr, theta, alpha, beta):
     theta_array = np.array(theta[data["user_id"]])
     beta_array = np.array(beta[data["question_id"]])
     alpha_array = np.array(alpha[data["question_id"]])
+    gamma_i = np.array(gamma[data["user_id"]])
     diff = (theta_array - beta_array)
     likli = sigmoid(alpha_array * diff)
-    derivative_factor = (data["is_correct"] - likli)
-    derivative_theta = alpha_array * derivative_factor
-    derivative_alpha = diff * derivative_factor
+    gamma_likeli = sigmoid_new(diff, gamma_i)
+    gamma_likli_alt = gamma_likeli - inverse(gamma)
+    part_1 = np.array([gamma_likeli[i] * data["is_correct"][i] for i in range(len(gamma_likeli))])
+    part_2 = np.array([gamma_likli_alt[i] * data["is_correct"][i] for i in
+              range(len(gamma_likli_alt))])
+    derivative_theta = part_1 - likli
     derivative_beta = -derivative_theta
+    derivative_gamma = part_2 + inverse(gamma)
+
     # likeli is a large array needs grouping use bincount
     theta += lr * np.bincount(data["user_id"], derivative_theta)
     beta += lr * np.bincount(data["question_id"], derivative_beta)
-    alpha += lr * np.bincount(data["question_id"], derivative_alpha)
-    return theta, alpha, beta
+    gamma += lr * np.bincount(data["question_id"], derivative_gamma)
+    return theta, alpha, beta, gamma
 
 
 def irt(data, val_data, lr, iterations):
@@ -80,6 +92,7 @@ def irt(data, val_data, lr, iterations):
     # rows = 542
     columns = max(data["question_id"]) + 1
     # columns = 1774
+    lower = np.ones(rows*columns) * 0.1
     # use random to set
     np.random.seed(1)
     theta = np.random.rand(rows)
@@ -95,18 +108,18 @@ def irt(data, val_data, lr, iterations):
         train_likelihood.append(neg_lld)
         valid_lld = neg_log_likelihood(val_data, theta, alpha, beta)
         valid_likelihood.append(valid_lld)
-        score_train = evaluate(data, theta, alpha, beta)
+        score_train = evaluate(data, theta, alpha, beta, lower)
         train_acc_lst.append(score_train)
-        score = evaluate(data=val_data, theta=theta, alpha=alpha, beta=beta)
+        score = evaluate(data=val_data, theta=theta, alpha=alpha, beta=beta, gamma=lower)
         val_acc_lst.append(score)
         print("On training data set, NLLK: {} \t Score: {}".format(neg_lld,
                                                                    score))
-        theta, alpha, beta = update_theta_beta(data, lr, theta, alpha, beta)
+        theta, alpha, beta, lowe = update_theta_beta_bound(data, lr, theta, alpha, beta, lower)
 
     return theta, alpha, beta, train_likelihood, valid_likelihood, train_acc_lst, val_acc_lst
 
 
-def evaluate(data, theta, alpha, beta):
+def evaluate(data, theta, alpha, beta, gamma):
     """ Evaluate the model given data and return the accuracy.
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
@@ -119,7 +132,7 @@ def evaluate(data, theta, alpha, beta):
     for i, q in enumerate(data["question_id"]):
         u = data["user_id"][i]
         x = (alpha[q] * (theta[u] - beta[q])).sum()
-        p_a = sigmoid(x)
+        p_a = sigmoid(x) * (1 - gamma[u]) + gamma[u]
         pred.append(p_a >= 0.5)
     return np.sum((data["is_correct"] == np.array(pred))) \
            / len(data["is_correct"])
